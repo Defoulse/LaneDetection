@@ -2,13 +2,14 @@ import cv2  # Import the OpenCV library to enable computer vision
 import numpy as np  # Import the NumPy scientific computing library
 import edge_detection as edge  # Handles the detection of lane lines
 import matplotlib.pyplot as plt  # Used for plotting and error checking
+from matplotlib.widgets import Cursor, Button
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import messagebox as mb
 
 
 file_size = (1920, 1080)  # Assumes 1920x1080 mp4
-scale_ratio = 0.6  # Option to scale to fraction of original size.
+scale_ratio = 0.5  # Option to scale to fraction of original size.
 output_frames_per_second = 20.0
 
 # Global variables
@@ -58,12 +59,21 @@ class Lane:
 
         # Four corners of the trapezoid-shaped region of interest
         # You need to find these corners manually.
-        self.roi_points = np.float32([
-            (int(0.500 * width), int(0.600 * height)),  # Top-left corner default (int(0.456 * width), int(0.544 * height))
-            (200, height - 1),  # Bottom-left corner default (0, height - 1)
-            (int(0.958 * width), height - 1),  # Bottom-right corner default (int(0.958 * width), height - 1)
-            (int(0.7000 * width), int(0.600 * height))  # Top-right corner default (int(0.6183 * width), int(0.544 * height))
-        ])
+        if sTLx != 0 or sTLy != 0 or sTRx != 0 or sTRy != 0 \
+                or sBLx != 0 or sBLy != 0 or sBRx != 0 or sBRy != 0:
+            self.roi_points = np.float32([
+                (sTLx, sTLy),
+                (sBLx, sBLy),
+                (sBRx, sBRy),
+                (sTRx, sTRy)
+            ])
+        else:
+            self.roi_points = np.float32([
+                (int(0.500 * width), int(0.600 * height)),  # Top-left corner
+                (200, height - 1),  # Bottom-left corner
+                (int(0.958 * width), height - 1),  # Bottom-right corner
+                (int(0.7000 * width), int(0.600 * height))  # Top-right corner
+            ])
 
         # The desired corner locations  of the region of interest
         # after we perform perspective transformation.
@@ -706,7 +716,7 @@ class Lane:
 # frame_with_lines = tk.BooleanVar()
 # curvature_and_center_offset = tk.BooleanVar()
 
-def main(regofin, wafr, hist, slwpix, prevlin, frwili, curvandceoff):
+def main(regofin: bool, wafr: bool, hist: bool, slwpix: bool, prevlin: bool, frwili: bool, curvandceoff: bool, calibrate: bool):
     string_sr = str(tk_scale_ratio.get())
     global scale_ratio
     scale_ratio = float(string_sr)
@@ -736,6 +746,9 @@ def main(regofin, wafr, hist, slwpix, prevlin, frwili, curvandceoff):
 
             # Store the original frame
             original_frame = frame.copy()
+
+            if calibrate:
+                return original_frame
 
             # Create a Lane object
             lane_obj = Lane(orig_frame=original_frame)
@@ -837,27 +850,110 @@ frame_with_lines = tk.BooleanVar()
 curvature_and_center_offset = tk.BooleanVar()
 tk_scale_ratio = tk.DoubleVar()
 
-tk.Checkbutton(frame, text="Region of Interest", variable=roi).grid(row=2, column=1, sticky='W')
-tk.Checkbutton(frame, text="Bird's view eye", variable=warped_frame).grid(row=3, column=1, sticky='W')
-tk.Checkbutton(frame, text="Histogram", variable=histogram).grid(row=4, column=1, sticky='W')
-tk.Checkbutton(frame, text="Lane Line pixels", variable=sliding_window_pixels).grid(row=5, column=1, sticky='W')
-tk.Checkbutton(frame, text="Lane Line", variable=previous_lines).grid(row=6, column=1, sticky='W')
-tk.Checkbutton(frame, text="Lines on the original frame", variable=frame_with_lines).grid(row=7, column=1, sticky='W')
-tk.Checkbutton(frame, text="Curvature and center offset", variable=curvature_and_center_offset).grid(row=8, column=1, sticky='W')
+tk.Checkbutton(frame, text="Region of Interest", variable=roi).grid(row=6, column=1, sticky='W')
+tk.Checkbutton(frame, text="Bird's view eye", variable=warped_frame).grid(row=7, column=1, sticky='W')
+tk.Checkbutton(frame, text="Histogram", variable=histogram).grid(row=8, column=1, sticky='W')
+tk.Checkbutton(frame, text="Lane Line pixels", variable=sliding_window_pixels).grid(row=9, column=1, sticky='W')
+tk.Checkbutton(frame, text="Lane Line", variable=previous_lines).grid(row=10, column=1, sticky='W')
+tk.Checkbutton(frame, text="Lines on the original frame", variable=frame_with_lines).grid(row=11, column=1, sticky='W')
+tk.Checkbutton(frame, text="Curvature and center offset", variable=curvature_and_center_offset).grid(row=12, column=1, sticky='W')
 
 select_scale_ratio = tk.Label(frame, text="Select video scale ratio").grid(row=1, column=0)
 scale = tk.Scale(frame, variable=tk_scale_ratio, orient=tk.HORIZONTAL, resolution=0.1, from_=0.5, to=1.0).grid(row=1, column=1)
+
+
+def onclick(event):
+    x1, y1 = int(event.xdata), int(event.ydata)
+    global TLx, TLy, TRx, TRy, BLx, BLy, BRx, BRy
+    global sTLx, sTLy, sTRx, sTRy, sBLx, sBLy, sBRx, sBRy
+
+    if choice.get() == 1:
+        TLx.set(x1)
+        TLy.set(y1)
+        sTLx = int(TLx.get())
+        sTLy = int(TLy.get())
+    if choice.get() == 2:
+        TRx.set(x1)
+        TRy.set(y1)
+        sTRx = int(TRx.get())
+        sTRy = int(TRy.get())
+    if choice.get() == 3:
+        BLx.set(x1)
+        BLy.set(y1)
+        sBLx = int(BLx.get())
+        sBLy = int(BLy.get())
+    if choice.get() == 4:
+        BRx.set(x1)
+        BRy.set(y1)
+        sBRx = int(BRx.get())
+        sBRy = int(BRy.get())
+
+
+def calibrate_roi():
+    if not filename.get():
+        mb.showerror("Error", "Please select video file")
+        return
+
+    result = main(regofin=False, wafr=False, hist=False, slwpix=False, prevlin=False, frwili=False, curvandceoff=False, calibrate=True)
+
+    fig, ax = plt.subplots()
+    cursor = Cursor(ax,
+                    horizOn=True,
+                    vertOn=True,
+                    color='green',
+                    linewidth=2.0)
+
+    fig.canvas.mpl_connect('button_press_event', onclick)
+
+    plt.imshow(result)
+    plt.show()
+
+
+choice = tk.IntVar()
+TLx = tk.IntVar()
+TLy = tk.IntVar()
+TRx = tk.IntVar()
+TRy = tk.IntVar()
+BLx = tk.IntVar()
+BLy = tk.IntVar()
+BRx = tk.IntVar()
+BRy = tk.IntVar()
+
+sTLx = 0
+sTLy = 0
+sTRx = 0
+sTRy = 0
+sBLx = 0
+sBLy = 0
+sBRx = 0
+sBRy = 0
+
+r1 = tk.Radiobutton(frame, text="Top-Left corner", variable=choice, value=1).grid(row=2, column=0, sticky='W')
+r2 = tk.Radiobutton(frame, text="Top-Right corner", variable=choice, value=2).grid(row=3, column=0, sticky='W')
+r3 = tk.Radiobutton(frame, text="Bottom-Left corner", variable=choice, value=3).grid(row=4, column=0, sticky='W')
+r4 = tk.Radiobutton(frame, text="Bottom-Right corner", variable=choice, value=4).grid(row=5, column=0, sticky='W')
+
+ETLx = tk.Entry(frame, textvariable=TLx).grid(row=2, column=0, sticky='E')
+ETLy = tk.Entry(frame, textvariable=TLy).grid(row=2, column=1, sticky='W')
+ETRx = tk.Entry(frame, textvariable=TRx).grid(row=3, column=0, sticky='E')
+ETRy = tk.Entry(frame, textvariable=TRy).grid(row=3, column=1, sticky='W')
+EBLx = tk.Entry(frame, textvariable=BLx).grid(row=4, column=0, sticky='E')
+EBLy = tk.Entry(frame, textvariable=BLy).grid(row=4, column=1, sticky='W')
+EBRx = tk.Entry(frame, textvariable=BRx).grid(row=5, column=0, sticky='E')
+EBRy = tk.Entry(frame, textvariable=BRy).grid(row=5, column=1, sticky='W')
+
+button = tk.Button(frame, text="Calibrate Region of Interest", command=calibrate_roi).grid(row=2, column=2)
 control_keys = tk.Label(frame, text=
                         """Control Keys:
 Press "q" to exit the algorithm process.
 Press "s" to stop frame during algorithm process.""",
                         justify=tk.LEFT,
-                        bg="#dbdbdb").grid(row=2, column=0, rowspan=7)
+                        bg="#dbdbdb").grid(row=6, column=0, rowspan=7)
 
 
 def start_alg():
     main(roi.get(), warped_frame.get(), histogram.get(), sliding_window_pixels.get(),
-         previous_lines.get(), frame_with_lines.get(), curvature_and_center_offset.get())
+         previous_lines.get(), frame_with_lines.get(), curvature_and_center_offset.get(), calibrate=False)
 
 
 button = tk.Button(frame, text="Run Algorithm", command=start_alg).grid(row=9, column=2)
