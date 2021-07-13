@@ -2,9 +2,11 @@ import cv2  # Import the OpenCV library to enable computer vision
 import numpy as np  # Import the NumPy scientific computing library
 import edge_detection as edge  # Handles the detection of lane lines
 import matplotlib.pyplot as plt  # Used for plotting and error checking
+import tkinter as tk
+from tkinter import filedialog
+from tkinter import messagebox as mb
 
 
-filename = 'Mumbai_Trim.mp4'
 file_size = (1920, 1080)  # Assumes 1920x1080 mp4
 scale_ratio = 0.6  # Option to scale to fraction of original size.
 output_frames_per_second = 20.0
@@ -698,8 +700,16 @@ class Lane:
 
 
 def main():
+    string_sr = str(tk_scale_ratio.get())
+    global scale_ratio
+    scale_ratio = float(string_sr)
+
+    if not filename.get():
+        mb.showerror("Error", "Please select video file")
+        return
+
     # Load a video
-    cap = cv2.VideoCapture(filename)
+    cap = cv2.VideoCapture(filename.get())
 
     # Create a VideoWriter object so we can save the video output
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -780,3 +790,63 @@ def main():
     cv2.destroyAllWindows()
 
 
+root = tk.Tk()
+
+width = 600
+height = 400
+
+s_width = root.winfo_screenwidth()
+s_height = root.winfo_screenheight()
+
+x = (s_width/2) - (width/2)
+y = (s_height/2) - (height/2)
+
+root.title("Lane Line Detection | Control Panel")
+root.geometry("%dx%d+%d+%d" % (width, height, x, y))
+frame = tk.Frame(root)
+frame.pack()
+
+select_file = tk.Label(frame, text="Select video file").grid(row=0, column=0)
+filename = tk.StringVar()
+entry_select_file = tk.Entry(frame, textvariable=filename).grid(row=0, column=1)
+
+
+def browse_file():
+    file_path = filedialog.askopenfilename(initialdir="/",
+                                           filetypes=(("mp4 files", "*.mp4"),
+                                                      ("png files", "*.png"),
+                                                      ("jpeg files", "*.jpg"),
+                                                      ("all files", "*.*")))
+    filename.set(file_path)
+
+
+browse = tk.Button(frame, text="Browse", command=browse_file).grid(row=0, column=2)
+
+roi = tk.IntVar()
+warped_frame = tk.IntVar()
+histogram = tk.IntVar()
+sliding_window_pixels = tk.IntVar()
+previous_lines = tk.IntVar()
+frame_with_lines = tk.IntVar()
+curvature_and_center_offset = tk.IntVar()
+tk_scale_ratio = tk.DoubleVar()
+
+tk.Checkbutton(frame, text="Region of Interest", variable=roi).grid(row=2, column=1, sticky='W')
+tk.Checkbutton(frame, text="Bird's view eye", variable=warped_frame).grid(row=3, column=1, sticky='W')
+tk.Checkbutton(frame, text="Histogram", variable=histogram).grid(row=4, column=1, sticky='W')
+tk.Checkbutton(frame, text="Lane Line pixels", variable=sliding_window_pixels).grid(row=5, column=1, sticky='W')
+tk.Checkbutton(frame, text="Lane Line", variable=previous_lines).grid(row=6, column=1, sticky='W')
+tk.Checkbutton(frame, text="Lines on the original frame", variable=frame_with_lines).grid(row=7, column=1, sticky='W')
+tk.Checkbutton(frame, text="Curvature and center offset", variable=curvature_and_center_offset).grid(row=8, column=1, sticky='W')
+
+select_scale_ratio = tk.Label(frame, text="Select video scale ratio").grid(row=1, column=0)
+scale = tk.Scale(frame, variable=tk_scale_ratio, orient=tk.HORIZONTAL, resolution=0.1, from_=0.5, to=1.0).grid(row=1, column=1)
+control_keys = tk.Label(frame, text=
+                        """Control Keys:
+Press "q" to exit the algorithm process.
+Press "s" to stop frame during algorithm process.""",
+                        justify=tk.LEFT,
+                        bg="#dbdbdb").grid(row=2, column=0, rowspan=7)
+button = tk.Button(frame, text="Run Algorithm", command=main).grid(row=9, column=2)
+
+root.mainloop()
