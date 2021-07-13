@@ -4,7 +4,7 @@ import edge_detection as edge  # Handles the detection of lane lines
 import matplotlib.pyplot as plt  # Used for plotting and error checking
 
 
-filename = 'Mumbai.mp4'
+filename = 'Mumbai_Trim.mp4'
 file_size = (1920, 1080)  # Assumes 1920x1080 mp4
 scale_ratio = 0.6  # Option to scale to fraction of original size.
 output_frames_per_second = 20.0
