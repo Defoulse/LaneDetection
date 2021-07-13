@@ -698,8 +698,15 @@ class Lane:
 
         cv2.destroyAllWindows()
 
+# roi = tk.BooleanVar()
+# warped_frame = tk.BooleanVar()
+# histogram = tk.BooleanVar()
+# sliding_window_pixels = tk.BooleanVar()
+# previous_lines = tk.BooleanVar()
+# frame_with_lines = tk.BooleanVar()
+# curvature_and_center_offset = tk.BooleanVar()
 
-def main():
+def main(regofin, wafr, hist, slwpix, prevlin, frwili, curvandceoff):
     string_sr = str(tk_scale_ratio.get())
     global scale_ratio
     scale_ratio = float(string_sr)
@@ -737,25 +744,25 @@ def main():
             lane_line_markings = lane_obj.get_line_markings()
 
             # Plot the region of interest on the image
-            lane_obj.plot_roi(plot=False)
+            lane_obj.plot_roi(plot=regofin)
 
             # Perform the perspective transform to generate a bird's eye view
             # If Plot == True, show image with new region of interest
-            warped_frame = lane_obj.perspective_transform(plot=False)
+            warped_frame = lane_obj.perspective_transform(plot=wafr)
 
             # Generate the image histogram to serve as a starting point
             # for finding lane line pixels
-            histogram = lane_obj.calculate_histogram(plot=False)
+            histogram = lane_obj.calculate_histogram(plot=hist)
 
             # Find lane line pixels using the sliding window method
             left_fit, right_fit = lane_obj.get_lane_line_indices_sliding_windows(
-                plot=False)
+                plot=slwpix)
 
             # Fill in the lane line
-            lane_obj.get_lane_line_previous_window(left_fit, right_fit, plot=False)
+            lane_obj.get_lane_line_previous_window(left_fit, right_fit, plot=prevlin)
 
             # Overlay lines on the original frame
-            frame_with_lane_lines = lane_obj.overlay_lane_lines(plot=False)
+            frame_with_lane_lines = lane_obj.overlay_lane_lines(plot=frwili)
 
             # Calculate lane line curvature (left and right lane lines)
             lane_obj.calculate_curvature(print_to_terminal=False)
@@ -765,7 +772,7 @@ def main():
 
             # Display curvature and center offset on image
             frame_with_lane_lines2 = lane_obj.display_curvature_offset(
-                frame=frame_with_lane_lines, plot=False)
+                frame=frame_with_lane_lines, plot=curvandceoff)
 
             # Display the frame
             cv2.imshow("Frame", frame_with_lane_lines2)
@@ -812,8 +819,7 @@ entry_select_file = tk.Entry(frame, textvariable=filename).grid(row=0, column=1)
 
 
 def browse_file():
-    file_path = filedialog.askopenfilename(initialdir="/",
-                                           filetypes=(("mp4 files", "*.mp4"),
+    file_path = filedialog.askopenfilename(filetypes=(("mp4 files", "*.mp4"),
                                                       ("png files", "*.png"),
                                                       ("jpeg files", "*.jpg"),
                                                       ("all files", "*.*")))
@@ -822,13 +828,13 @@ def browse_file():
 
 browse = tk.Button(frame, text="Browse", command=browse_file).grid(row=0, column=2)
 
-roi = tk.IntVar()
-warped_frame = tk.IntVar()
-histogram = tk.IntVar()
-sliding_window_pixels = tk.IntVar()
-previous_lines = tk.IntVar()
-frame_with_lines = tk.IntVar()
-curvature_and_center_offset = tk.IntVar()
+roi = tk.BooleanVar()
+warped_frame = tk.BooleanVar()
+histogram = tk.BooleanVar()
+sliding_window_pixels = tk.BooleanVar()
+previous_lines = tk.BooleanVar()
+frame_with_lines = tk.BooleanVar()
+curvature_and_center_offset = tk.BooleanVar()
 tk_scale_ratio = tk.DoubleVar()
 
 tk.Checkbutton(frame, text="Region of Interest", variable=roi).grid(row=2, column=1, sticky='W')
@@ -847,6 +853,13 @@ Press "q" to exit the algorithm process.
 Press "s" to stop frame during algorithm process.""",
                         justify=tk.LEFT,
                         bg="#dbdbdb").grid(row=2, column=0, rowspan=7)
-button = tk.Button(frame, text="Run Algorithm", command=main).grid(row=9, column=2)
+
+
+def start_alg():
+    main(roi.get(), warped_frame.get(), histogram.get(), sliding_window_pixels.get(),
+         previous_lines.get(), frame_with_lines.get(), curvature_and_center_offset.get())
+
+
+button = tk.Button(frame, text="Run Algorithm", command=start_alg).grid(row=9, column=2)
 
 root.mainloop()
