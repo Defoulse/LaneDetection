@@ -29,16 +29,7 @@ prev_right_fit2 = []
 
 
 class Lane:
-    """
-    Represents a lane on a road.
-    """
-
     def __init__(self, orig_frame):
-        """
-          Default constructor
-
-        :param orig_frame: Original camera image (i.e. frame)
-        """
         self.orig_frame = orig_frame
 
         # This will hold an image with the lane lines
@@ -118,12 +109,6 @@ class Lane:
         self.center_offset = None
 
     def calculate_car_position(self, print_to_terminal=False):
-        """
-        Calculate the position of the car relative to the center
-
-        :param: print_to_terminal Display data to console if True
-        :return: Offset from the center of the lane
-        """
         # Assume the camera is centered in the image.
         # Get position of car in centimeters
         car_location = self.orig_frame.shape[1] / 2
@@ -147,12 +132,6 @@ class Lane:
         return center_offset
 
     def calculate_curvature(self, print_to_terminal=False):
-        """
-        Calculate the road curvature in meters.
-
-        :param: print_to_terminal Display data to console if True
-        :return: Radii of curvature
-        """
         # Set the y-value where we want to calculate the road curvature.
         # Select the maximum y-value, which is the bottom of the frame.
         y_eval = np.max(self.ploty)
@@ -180,12 +159,6 @@ class Lane:
         return left_curvem, right_curvem
 
     def calculate_histogram(self, frame=None, plot=True):
-        """
-        Calculate the image histogram to find peaks in white pixel count
-
-        :param frame: The warped image
-        :param plot: Create a plot if True
-        """
         if frame is None:
             frame = self.warped_frame
 
@@ -206,33 +179,17 @@ class Lane:
         return self.histogram
 
     def display_curvature_offset(self, frame=None, plot=False):
-        """
-        Display curvature and offset statistics on the image
-
-        :param: plot Display the plot if True
-        :return: Image with lane lines and curvature
-        """
         image_copy = None
         if frame is None:
             image_copy = self.orig_frame.copy()
         else:
             image_copy = frame
 
-        cv2.putText(image_copy, 'Curve Radius: ' + str((
-                                                               self.left_curvem + self.right_curvem) / 2)[:7] + ' m',
-                    (int((
-                                 5 / 600) * self.width), int((
-                                                                     20 / 338) * self.height)),
-                    cv2.FONT_HERSHEY_SIMPLEX, (float((
-                                                             0.5 / 600) * self.width)), (
-                        255, 255, 255), 2, cv2.LINE_AA)
-        cv2.putText(image_copy, 'Center Offset: ' + str(
-            self.center_offset)[:7] + ' cm', (int((
-                                                          5 / 600) * self.width), int((
-                                                                                              40 / 338) * self.height)),
-                    cv2.FONT_HERSHEY_SIMPLEX, (float((
-                                                             0.5 / 600) * self.width)), (
-                        255, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(image_copy, 'Curve Radius: ' + str((self.left_curvem + self.right_curvem) / 2)[:7] + ' m',
+                    (int((5 / 600) * self.width), int((20 / 338) * self.height)),
+                    cv2.FONT_HERSHEY_SIMPLEX, (float((0.5 / 600) * self.width)), (255, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(image_copy, 'Center Offset: ' + str(self.center_offset)[:7] + ' cm', (int((5 / 600) * self.width), int((40 / 338) * self.height)),
+                    cv2.FONT_HERSHEY_SIMPLEX, (float((0.5 / 600) * self.width)), (255, 255, 255), 2, cv2.LINE_AA)
 
         if plot == True:
             cv2.imshow("Image with Curvature and Offset", image_copy)
@@ -368,13 +325,6 @@ class Lane:
             plt.show()
 
     def get_lane_line_indices_sliding_windows(self, plot=False):
-        """
-        Get the indices of the lane line pixels using the
-        sliding windows technique.
-
-        :param: plot Show plot or not
-        :return: Best fit lines for the left and right lines of the current lane
-        """
         # Sliding window width is +/- margin
         margin = self.margin
 
@@ -418,11 +368,9 @@ class Lane:
 
             # Identify the nonzero pixels in x and y within the window
             good_left_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
-                              (nonzerox >= win_xleft_low) & (
-                                      nonzerox < win_xleft_high)).nonzero()[0]
+                              (nonzerox >= win_xleft_low) & (nonzerox < win_xleft_high)).nonzero()[0]
             good_right_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
-                               (nonzerox >= win_xright_low) & (
-                                       nonzerox < win_xright_high)).nonzero()[0]
+                                (nonzerox >= win_xright_low) & (nonzerox < win_xright_high)).nonzero()[0]
 
             # Append these indices to the lists
             left_lane_inds.append(good_left_inds)
@@ -520,12 +468,6 @@ class Lane:
         return self.left_fit, self.right_fit
 
     def get_line_markings(self, frame=None):
-        """
-        Isolates lane lines.
-
-          :param frame: The camera frame that contains the lanes we want to detect
-        :return: Binary (i.e. black and white) image containing the lane lines.
-        """
         if frame is None:
             frame = self.orig_frame
 
@@ -576,17 +518,10 @@ class Lane:
         ### Combine the possible lane lines with the possible lane line edges #####
         # If you show rs_binary visually, you'll see that it is not that different
         # from this return value. The edges of lane lines are thin lines of pixels.
-        self.lane_line_markings = cv2.bitwise_or(rs_binary, sxbinary.astype(
-            np.uint8))
+        self.lane_line_markings = cv2.bitwise_or(rs_binary, sxbinary.astype(np.uint8))
         return self.lane_line_markings
 
     def histogram_peak(self):
-        """
-        Get the left and right peak of the histogram
-
-        Return the x coordinate of the left histogram peak and the right histogram
-        peak.
-        """
         midpoint = int(self.histogram.shape[0] / 2)
         leftx_base = np.argmax(self.histogram[:midpoint])
         rightx_base = np.argmax(self.histogram[midpoint:]) + midpoint
@@ -595,11 +530,6 @@ class Lane:
         return leftx_base, rightx_base
 
     def overlay_lane_lines(self, plot=False):
-        """
-        Overlay lane lines on the original frame
-        :param: Plot the lane lines if True
-        :return: Lane with overlay
-        """
         # Generate an image to draw the lane lines on
         warp_zero = np.zeros_like(self.warped_frame).astype(np.uint8)
         color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
@@ -637,12 +567,6 @@ class Lane:
         return result
 
     def perspective_transform(self, frame=None, plot=False):
-        """
-        Perform the perspective transform.
-        :param: frame Current frame
-        :param: plot Plot the warped image if True
-        :return: Bird's eye view of the current lane
-        """
         if frame is None:
             frame = self.lane_line_markings
 
@@ -683,11 +607,6 @@ class Lane:
         return self.warped_frame
 
     def plot_roi(self, frame=None, plot=False):
-        """
-        Plot the region of interest on an image.
-        :param: frame The current image frame
-        :param: plot Plot the roi image if True
-        """
         if plot == False:
             return
 
@@ -708,13 +627,6 @@ class Lane:
 
         cv2.destroyAllWindows()
 
-# roi = tk.BooleanVar()
-# warped_frame = tk.BooleanVar()
-# histogram = tk.BooleanVar()
-# sliding_window_pixels = tk.BooleanVar()
-# previous_lines = tk.BooleanVar()
-# frame_with_lines = tk.BooleanVar()
-# curvature_and_center_offset = tk.BooleanVar()
 
 def main(regofin: bool, wafr: bool, hist: bool, slwpix: bool, prevlin: bool, frwili: bool, calibrate: bool):
     string_sr = str(tk_scale_ratio.get())
@@ -791,11 +703,7 @@ def main(regofin: bool, wafr: bool, hist: bool, slwpix: bool, prevlin: bool, frw
             cv2.imshow("Frame", frame_with_lane_lines2)
             if filename.get().endswith(".jpg") or filename.get().endswith(".png"):
                 cv2.waitKey()
-            # plt.imshow(frame_with_lane_lines2)
-            # plt.show()
 
-            # Display frame for X milliseconds and check if q key is pressed
-            # q == quit
             if cv2.waitKey(1) & 0xFF == ord('s'):
                 cv2.waitKey(0)
             if cv2.waitKey(25) & 0xFF == ord('q'):
@@ -945,13 +853,12 @@ EBLy = tk.Entry(frame, textvariable=BLy).grid(row=5, column=1, sticky='W')
 EBRx = tk.Entry(frame, textvariable=BRx).grid(row=6, column=0, sticky='E')
 EBRy = tk.Entry(frame, textvariable=BRy).grid(row=6, column=1, sticky='W')
 
-button = tk.Button(frame, text="Calibrate Region of Interest", command=calibrate_roi).grid(row=2, column=2)
+calibrate_button = tk.Button(frame, text="Calibrate Region of Interest", command=calibrate_roi).grid(row=2, column=2)
 control_keys = tk.Label(frame, text=
                         """Control Keys:
 Press "q" to exit the algorithm process.
 Press "s" to stop frame during algorithm process.""",
-                        justify=tk.LEFT,
-                        bg="#dbdbdb").grid(row=7, column=0, rowspan=7)
+                        justify=tk.LEFT, bg="#dbdbdb").grid(row=7, column=0, rowspan=7)
 
 
 def start_alg():
@@ -959,6 +866,6 @@ def start_alg():
          previous_lines.get(), frame_with_lines.get(), calibrate=False)
 
 
-button = tk.Button(frame, text="Run Algorithm", command=start_alg).grid(row=12, column=2)
+run_button = tk.Button(frame, text="Run Algorithm", command=start_alg).grid(row=12, column=2)
 
 root.mainloop()
