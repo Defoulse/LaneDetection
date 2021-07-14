@@ -557,7 +557,7 @@ class Lane:
         # White in the regions with the purest hue colors (e.g. >130...play with
         # this value for best results).
         s_channel = hls[:, :, 2]  # use only the saturation channel data
-        _, s_binary = edge.threshold(s_channel, (10, 255))
+        _, s_binary = edge.threshold(s_channel, (int(high_saturation.get()), 255))
 
         # Perform binary thresholding on the R (red) channel of the
         # original BGR video frame.
@@ -716,7 +716,7 @@ class Lane:
 # frame_with_lines = tk.BooleanVar()
 # curvature_and_center_offset = tk.BooleanVar()
 
-def main(regofin: bool, wafr: bool, hist: bool, slwpix: bool, prevlin: bool, frwili: bool, curvandceoff: bool, calibrate: bool):
+def main(regofin: bool, wafr: bool, hist: bool, slwpix: bool, prevlin: bool, frwili: bool, calibrate: bool):
     string_sr = str(tk_scale_ratio.get())
     global scale_ratio
     scale_ratio = float(string_sr)
@@ -785,11 +785,12 @@ def main(regofin: bool, wafr: bool, hist: bool, slwpix: bool, prevlin: bool, frw
 
             # Display curvature and center offset on image
             frame_with_lane_lines2 = lane_obj.display_curvature_offset(
-                frame=frame_with_lane_lines, plot=curvandceoff)
+                frame=frame_with_lane_lines, plot=False)
 
             # Display the frame
             cv2.imshow("Frame", frame_with_lane_lines2)
-            #cv2.waitKey()
+            if filename.get().endswith(".jpg") or filename.get().endswith(".png"):
+                cv2.waitKey()
             # plt.imshow(frame_with_lane_lines2)
             # plt.show()
 
@@ -812,7 +813,7 @@ def main(regofin: bool, wafr: bool, hist: bool, slwpix: bool, prevlin: bool, frw
 
 root = tk.Tk()
 
-width = 600
+width = 750
 height = 400
 
 s_width = root.winfo_screenwidth()
@@ -834,8 +835,7 @@ entry_select_file = tk.Entry(frame, textvariable=filename).grid(row=0, column=1)
 def browse_file():
     file_path = filedialog.askopenfilename(filetypes=(("mp4 files", "*.mp4"),
                                                       ("png files", "*.png"),
-                                                      ("jpeg files", "*.jpg"),
-                                                      ("all files", "*.*")))
+                                                      ("jpeg files", "*.jpg")))
     filename.set(file_path)
 
 
@@ -847,19 +847,22 @@ histogram = tk.BooleanVar()
 sliding_window_pixels = tk.BooleanVar()
 previous_lines = tk.BooleanVar()
 frame_with_lines = tk.BooleanVar()
-curvature_and_center_offset = tk.BooleanVar()
 tk_scale_ratio = tk.DoubleVar()
+high_saturation_scale = tk.IntVar()
 
-tk.Checkbutton(frame, text="Region of Interest", variable=roi).grid(row=6, column=1, sticky='W')
-tk.Checkbutton(frame, text="Bird's view eye", variable=warped_frame).grid(row=7, column=1, sticky='W')
-tk.Checkbutton(frame, text="Histogram", variable=histogram).grid(row=8, column=1, sticky='W')
-tk.Checkbutton(frame, text="Lane Line pixels", variable=sliding_window_pixels).grid(row=9, column=1, sticky='W')
-tk.Checkbutton(frame, text="Lane Line", variable=previous_lines).grid(row=10, column=1, sticky='W')
-tk.Checkbutton(frame, text="Lines on the original frame", variable=frame_with_lines).grid(row=11, column=1, sticky='W')
-tk.Checkbutton(frame, text="Curvature and center offset", variable=curvature_and_center_offset).grid(row=12, column=1, sticky='W')
+tk.Checkbutton(frame, text="Region of Interest", variable=roi).grid(row=7, column=1, sticky='W')
+tk.Checkbutton(frame, text="Bird's view eye, for high saturation", variable=warped_frame).grid(row=8, column=1, sticky='W')
+tk.Checkbutton(frame, text="Histogram", variable=histogram).grid(row=9, column=1, sticky='W')
+tk.Checkbutton(frame, text="Lane Line pixels", variable=sliding_window_pixels).grid(row=10, column=1, sticky='W')
+tk.Checkbutton(frame, text="Lane Line", variable=previous_lines).grid(row=11, column=1, sticky='W')
+tk.Checkbutton(frame, text="Lines on the original frame", variable=frame_with_lines).grid(row=12, column=1, sticky='W')
 
 select_scale_ratio = tk.Label(frame, text="Select video scale ratio").grid(row=1, column=0)
 scale = tk.Scale(frame, variable=tk_scale_ratio, orient=tk.HORIZONTAL, resolution=0.1, from_=0.5, to=1.0).grid(row=1, column=1)
+select_scale_high_saturation = tk.Label(frame, text="Select high saturation of image, best range is between 10 and 80").grid(row=2, column=0)
+high_saturation = tk.Scale(frame, variable=high_saturation_scale, orient=tk.HORIZONTAL, resolution=1, from_=1, to=100)
+high_saturation.set(10)
+high_saturation.grid(row=2, column=1)
 
 
 def onclick(event):
@@ -894,7 +897,7 @@ def calibrate_roi():
         mb.showerror("Error", "Please select video file")
         return
 
-    result = main(regofin=False, wafr=False, hist=False, slwpix=False, prevlin=False, frwili=False, curvandceoff=False, calibrate=True)
+    result = main(regofin=False, wafr=False, hist=False, slwpix=False, prevlin=False, frwili=False, calibrate=True)
 
     fig, ax = plt.subplots()
     cursor = Cursor(ax,
@@ -928,19 +931,19 @@ sBLy = 0
 sBRx = 0
 sBRy = 0
 
-r1 = tk.Radiobutton(frame, text="Top-Left corner", variable=choice, value=1).grid(row=2, column=0, sticky='W')
-r2 = tk.Radiobutton(frame, text="Top-Right corner", variable=choice, value=2).grid(row=3, column=0, sticky='W')
-r3 = tk.Radiobutton(frame, text="Bottom-Left corner", variable=choice, value=3).grid(row=4, column=0, sticky='W')
-r4 = tk.Radiobutton(frame, text="Bottom-Right corner", variable=choice, value=4).grid(row=5, column=0, sticky='W')
+r1 = tk.Radiobutton(frame, text="Top-Left corner", variable=choice, value=1).grid(row=3, column=0, sticky='W')
+r2 = tk.Radiobutton(frame, text="Top-Right corner", variable=choice, value=2).grid(row=4, column=0, sticky='W')
+r3 = tk.Radiobutton(frame, text="Bottom-Left corner", variable=choice, value=3).grid(row=5, column=0, sticky='W')
+r4 = tk.Radiobutton(frame, text="Bottom-Right corner", variable=choice, value=4).grid(row=6, column=0, sticky='W')
 
-ETLx = tk.Entry(frame, textvariable=TLx).grid(row=2, column=0, sticky='E')
-ETLy = tk.Entry(frame, textvariable=TLy).grid(row=2, column=1, sticky='W')
-ETRx = tk.Entry(frame, textvariable=TRx).grid(row=3, column=0, sticky='E')
-ETRy = tk.Entry(frame, textvariable=TRy).grid(row=3, column=1, sticky='W')
-EBLx = tk.Entry(frame, textvariable=BLx).grid(row=4, column=0, sticky='E')
-EBLy = tk.Entry(frame, textvariable=BLy).grid(row=4, column=1, sticky='W')
-EBRx = tk.Entry(frame, textvariable=BRx).grid(row=5, column=0, sticky='E')
-EBRy = tk.Entry(frame, textvariable=BRy).grid(row=5, column=1, sticky='W')
+ETLx = tk.Entry(frame, textvariable=TLx).grid(row=3, column=0, sticky='E')
+ETLy = tk.Entry(frame, textvariable=TLy).grid(row=3, column=1, sticky='W')
+ETRx = tk.Entry(frame, textvariable=TRx).grid(row=4, column=0, sticky='E')
+ETRy = tk.Entry(frame, textvariable=TRy).grid(row=4, column=1, sticky='W')
+EBLx = tk.Entry(frame, textvariable=BLx).grid(row=5, column=0, sticky='E')
+EBLy = tk.Entry(frame, textvariable=BLy).grid(row=5, column=1, sticky='W')
+EBRx = tk.Entry(frame, textvariable=BRx).grid(row=6, column=0, sticky='E')
+EBRy = tk.Entry(frame, textvariable=BRy).grid(row=6, column=1, sticky='W')
 
 button = tk.Button(frame, text="Calibrate Region of Interest", command=calibrate_roi).grid(row=2, column=2)
 control_keys = tk.Label(frame, text=
@@ -948,14 +951,14 @@ control_keys = tk.Label(frame, text=
 Press "q" to exit the algorithm process.
 Press "s" to stop frame during algorithm process.""",
                         justify=tk.LEFT,
-                        bg="#dbdbdb").grid(row=6, column=0, rowspan=7)
+                        bg="#dbdbdb").grid(row=7, column=0, rowspan=7)
 
 
 def start_alg():
     main(roi.get(), warped_frame.get(), histogram.get(), sliding_window_pixels.get(),
-         previous_lines.get(), frame_with_lines.get(), curvature_and_center_offset.get(), calibrate=False)
+         previous_lines.get(), frame_with_lines.get(), calibrate=False)
 
 
-button = tk.Button(frame, text="Run Algorithm", command=start_alg).grid(row=9, column=2)
+button = tk.Button(frame, text="Run Algorithm", command=start_alg).grid(row=12, column=2)
 
 root.mainloop()
