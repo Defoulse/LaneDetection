@@ -759,7 +759,7 @@ tk_scale_ratio = tk.DoubleVar()
 high_saturation_scale = tk.IntVar()
 
 tk.Checkbutton(frame, text="Region of Interest", variable=roi).grid(row=7, column=1, sticky='W')
-tk.Checkbutton(frame, text="Bird's view eye, for high saturation", variable=warped_frame).grid(row=8, column=1, sticky='W')
+tk.Checkbutton(frame, text="Bird's eye view, for high saturation", variable=warped_frame).grid(row=8, column=1, sticky='W')
 tk.Checkbutton(frame, text="Histogram", variable=histogram).grid(row=9, column=1, sticky='W')
 tk.Checkbutton(frame, text="Lane Line pixels", variable=sliding_window_pixels).grid(row=10, column=1, sticky='W')
 tk.Checkbutton(frame, text="Lane Line", variable=previous_lines).grid(row=11, column=1, sticky='W')
